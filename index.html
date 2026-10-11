@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembuat QR Code Link</title>
+    
+    <!-- Memuat Tailwind CSS untuk styling yang modern dan cepat -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Memuat Font Google 'Inter' agar tampilan lebih elegan -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Memuat library QRious untuk membuat QR Code secara instan di sisi klien (browser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Background dengan gradien yang menarik */
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+        
+        /* Animasi muncul (fade in) */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden fade-in">
+        
+        <!-- Bagian Header Aplikasi -->
+        <div class="bg-blue-600 p-6 text-center text-white">
+            <h1 class="text-2xl font-bold mb-2">Pembuat QR Code</h1>
+            <p class="text-blue-100 text-sm">Ubah tautan (link) Anda menjadi QR Code dengan mudah dan cepat.</p>
+        </div>
+
+        <!-- Bagian Konten Form -->
+        <div class="p-6">
+            <div class="mb-5">
+                <label for="url-input" class="block text-sm font-medium text-gray-700 mb-2">Masukkan Link / URL:</label>
+                <input 
+                    type="url" 
+                    id="url-input" 
+                    placeholder="https://contoh-website.com" 
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                <!-- Area Pesan Error (disembunyikan secara default) -->
+                <p id="error-message" class="text-red-500 text-xs mt-2 hidden">Silakan masukkan URL yang valid terlebih dahulu.</p>
+            </div>
+
+            <button 
+                id="generate-btn"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md active:transform active:scale-95"
+            >
+                Buat QR Code
+            </button>
+
+            <!-- Container untuk hasil QR Code -->
+            <div id="qr-container" class="mt-8 flex flex-col items-center justify-center hidden">
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 shadow-inner mb-4">
+                    <!-- Canvas tempat QR Code akan digambar -->
+                    <canvas id="qr-canvas" class="mx-auto rounded"></canvas>
+                </div>
+                
+                <button 
+                    id="download-btn"
+                    class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md flex justify-center items-center gap-2 active:transform active:scale-95"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Gambar
+                </button>
+            </div>
+        </div>
+        
+        <!-- Bagian Footer Aplikasi -->
+        <div class="bg-gray-50 p-4 text-center border-t border-gray-100">
+            <p class="text-xs text-gray-400">Pastikan link sudah benar sebelum membuat QR Code.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mengambil elemen-elemen dari DOM
+            const urlInput = document.getElementById('url-input');
+            const generateBtn = document.getElementById('generate-btn');
+            const qrContainer = document.getElementById('qr-container');
+            const qrCanvas = document.getElementById('qr-canvas');
+            const downloadBtn = document.getElementById('download-btn');
+            const errorMessage = document.getElementById('error-message');
+
+            // Inisialisasi object QRious (Library QR Code)
+            // Kita inisialisasi tanpa value awal
+            const qr = new QRious({
+                element: qrCanvas,
+                size: 250, // Ukuran pixel QR code
+                background: 'white',
+                foreground: '#0f172a', // Warna gelap (slate-900) agar elegan
+                level: 'H' // Error correction level High
+            });
+
+            // Fungsi untuk membuat QR Code
+            function generateQRCode() {
+                const url = urlInput.value.trim();
+                
+                // Validasi input: pastikan tidak kosong
+                if (!url) {
+                    errorMessage.classList.remove('hidden');
+                    urlInput.classList.add('border-red-500');
+                    urlInput.classList.remove('border-gray-300');
+                    qrContainer.classList.add('hidden');
+                    return;
+                }
+
+                // Menyembunyikan pesan error jika input valid
+                errorMessage.classList.add('hidden');
+                urlInput.classList.remove('border-red-500');
+                urlInput.classList.add('border-gray-300');
+
+                // Generate QR code dengan memasukkan value ke object QRious
+                qr.value = url;
+                
+                // Tampilkan container hasil QR
+                qrContainer.classList.remove('hidden');
+                qrContainer.classList.add('fade-in'); // Tambahkan sedikit animasi
+            }
+
+            // Fungsi untuk mengunduh QR Code sebagai gambar PNG
+            function downloadQRCode() {
+                // Mengambil data URL dari canvas
+                const dataUrl = qrCanvas.toDataURL('image/png');
+                
+                // Membuat elemen <a> secara dinamis untuk memicu proses download
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'qrcode-link.png'; // Nama file yang akan didownload
+                
+                // Simulasikan klik pada elemen link
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // Mendaftarkan event listeners
+            generateBtn.addEventListener('click', generateQRCode);
+            downloadBtn.addEventListener('click', downloadQRCode);
+
+            // Memicu tombol generate saat pengguna menekan tombol 'Enter' pada input
+            urlInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateQRCode();
+                }
+            });
+
+            // Menghilangkan pesan error saat pengguna mulai mengetik ulang
+            urlInput.addEventListener('input', function() {
+                if (urlInput.value.trim().length > 0) {
+                    errorMessage.classList.add('hidden');
+                    urlInput.classList.remove('border-red-500');
+                    urlInput.classList.add('border-gray-300');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
